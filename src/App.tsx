@@ -12,7 +12,7 @@ import { ProfileScreen } from '@/screens/ProfileScreen'
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename={import.meta.env.BASE_URL}>
       <ToastProvider>
         <CurrentUserProvider>
           <Routes>

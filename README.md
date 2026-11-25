@@ -114,8 +114,12 @@ Gamified, frisch, selbstbewusst. Knallig aber kontrolliert, **nicht girly**.
 
 ## 6. Hosting
 
-- **Noch nicht entschieden**, kommt später (spätestens ca. 1 Woche vor der Präsi).
-- Beim Bauen nur beachten: App bleibt **rein statisch** (`npm run build` → `dist/`), **keine Server-Features**. Backend später = Supabase Cloud.
+- **GitHub Pages:** https://lk6114.github.io/swapd-app-dev/ (Repo `lk6114/swapd-app-dev`).
+- Deploy automatisch bei Push auf `main` via [.github/workflows/deploy.yml](.github/workflows/deploy.yml): `npm ci` → `npm run build` → `dist/index.html` als `404.html` kopieren (SPA-Fallback für Deep-Links) → `upload-pages-artifact` + `deploy-pages`.
+- App läuft unter Unterpfad → `base: '/swapd-app-dev/'` in `vite.config.ts`, Router mit `basename={import.meta.env.BASE_URL}`, PWA `start_url`/`scope` = `./`.
+- **Regel:** Dateien aus `public/` nie mit festem `/` verlinken. Im Code `asset('datei.png')` aus `src/lib/asset.ts`, in `index.html` `%BASE_URL%datei.png`.
+- Wird das Repo umbenannt → `base` in `vite.config.ts` anpassen.
+- App bleibt **rein statisch** (`npm run build` → `dist/`), **keine Server-Features**. Backend später = Supabase Cloud.
 
 ## 6b. Entwickeln & Starten
 
@@ -153,6 +157,7 @@ src/
 - **2026-11-25:** Stack, Adapter-Architektur, Hosting entschieden. README angelegt. Nächster Schritt: Grundgerüst (Vite + React + TS + Tailwind, CD-Theme, Navigation, Screens Feed/Inserat/Profil, `src/data` mit Mock-Adapter + `test.json`).
 - **2026-11-25:** Grundgerüst gebaut: Vite 4 + React 18 + TS + Tailwind 3 (CD-Theme), PWA (vite-plugin-pwa, Platzhalter-Icon „s'“), Mock-Adapter mit localStorage-Overlay. Screens: Feed (Offering/Looking for, Suche, Kategorien), Inserat-Detail mit „Request swap“ → Chat, Inserat einstellen (Foto + XP-Belohnung), Chats + Chat (Fake-Realtime), Profil (Level/XP, Listings, Reviews). Map-Tab = Platzhalter. Interface um `getUser`, `getReviews`, `getChat`, `startChat`, `subscribeToMessages` erweitert. Build + Typecheck grün.
   Nächste Schritte: Node auf LTS updaten · echte Logo-SVGs nach `public/` · Map-Lib entscheiden · Badges im Profil echt machen (aktuell Platzhalter) · Git-Repo anlegen.
+- **2026-11-25:** Hosting entschieden: **GitHub Pages** mit Actions-Deploy (siehe Abschnitt 6). Base-Pfad `/swapd-app-dev/`, 404.html-Fallback, `asset()`-Helper für public-Dateien. Einmalig im Repo nötig: Settings → Pages → Source = „GitHub Actions“.
 
 ## 9. Offene Fragen
 
