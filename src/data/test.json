@@ -1,0 +1,346 @@
+{
+  "users": [
+    {
+      "id": "10000000-0000-4000-8000-000000000001",
+      "name": "Mika",
+      "district": "Neukölln",
+      "bio": "Plant nerd, book hoarder. Always up for a swap at Tempelhofer Feld.",
+      "avatar_url": null,
+      "xp": 340,
+      "swaps_count": 7,
+      "rating_avg": 4.8,
+      "rating_count": 6,
+      "lat": 52.4811,
+      "lng": 13.435,
+      "created_at": "2026-11-01T12:00:00.000Z"
+    },
+    {
+      "id": "10000000-0000-4000-8000-000000000002",
+      "name": "Jonas",
+      "district": "Kreuzberg",
+      "bio": "Bikes, vinyl, good coffee.",
+      "avatar_url": null,
+      "xp": 520,
+      "swaps_count": 12,
+      "rating_avg": 4.9,
+      "rating_count": 11,
+      "lat": 52.4986,
+      "lng": 13.4033,
+      "created_at": "2026-11-02T12:00:00.000Z"
+    },
+    {
+      "id": "10000000-0000-4000-8000-000000000003",
+      "name": "Aylin",
+      "district": "Friedrichshain",
+      "bio": "Decluttering one box at a time.",
+      "avatar_url": null,
+      "xp": 180,
+      "swaps_count": 4,
+      "rating_avg": 4.6,
+      "rating_count": 3,
+      "lat": 52.5155,
+      "lng": 13.4541,
+      "created_at": "2026-11-03T12:00:00.000Z"
+    },
+    {
+      "id": "10000000-0000-4000-8000-000000000004",
+      "name": "Noah",
+      "district": "Prenzlauer Berg",
+      "bio": "Dad of two. Kids stuff in, kids stuff out.",
+      "avatar_url": null,
+      "xp": 260,
+      "swaps_count": 6,
+      "rating_avg": 4.7,
+      "rating_count": 5,
+      "lat": 52.5387,
+      "lng": 13.4247,
+      "created_at": "2026-11-04T12:00:00.000Z"
+    },
+    {
+      "id": "10000000-0000-4000-8000-000000000005",
+      "name": "Lea",
+      "district": "Wedding",
+      "bio": "Thrift queen. Swap > shop.",
+      "avatar_url": null,
+      "xp": 610,
+      "swaps_count": 15,
+      "rating_avg": 5,
+      "rating_count": 14,
+      "lat": 52.5502,
+      "lng": 13.3591,
+      "created_at": "2026-11-05T12:00:00.000Z"
+    }
+  ],
+  "listings": [
+    {
+      "id": "20000000-0000-4000-8000-000000000001",
+      "user_id": "10000000-0000-4000-8000-000000000002",
+      "type": "offer",
+      "title": "Monstera cutting, rooted",
+      "description": "Healthy cutting with three leaves, already in a small pot.",
+      "category": "plants",
+      "condition": "good",
+      "photo_url": null,
+      "district": "Kreuzberg",
+      "lat": 52.4931,
+      "lng": 13.3989,
+      "status": "active",
+      "created_at": "2026-11-10T09:00:00.000Z"
+    },
+    {
+      "id": "20000000-0000-4000-8000-000000000002",
+      "user_id": "10000000-0000-4000-8000-000000000002",
+      "type": "offer",
+      "title": "Road bike helmet (M)",
+      "description": "Barely used, fits 54–58 cm. Black.",
+      "category": "sports",
+      "condition": "like_new",
+      "photo_url": null,
+      "district": "Kreuzberg",
+      "lat": 52.4975,
+      "lng": 13.4033,
+      "status": "active",
+      "created_at": "2026-11-11T10:00:00.000Z"
+    },
+    {
+      "id": "20000000-0000-4000-8000-000000000003",
+      "user_id": "10000000-0000-4000-8000-000000000003",
+      "type": "offer",
+      "title": "Denim jacket, oversized",
+      "description": "Vintage Levi’s style, size L. Super cozy.",
+      "category": "clothes",
+      "condition": "good",
+      "photo_url": null,
+      "district": "Friedrichshain",
+      "lat": 52.5188,
+      "lng": 13.4585,
+      "status": "active",
+      "created_at": "2026-11-12T11:00:00.000Z"
+    },
+    {
+      "id": "20000000-0000-4000-8000-000000000004",
+      "user_id": "10000000-0000-4000-8000-000000000003",
+      "type": "search",
+      "title": "Looking for a desk lamp",
+      "description": "Anything that clamps to a desk. Can swap books or plants.",
+      "category": "home",
+      "condition": "used",
+      "photo_url": null,
+      "district": "Friedrichshain",
+      "lat": 52.5111,
+      "lng": 13.4508,
+      "status": "active",
+      "created_at": "2026-11-13T12:00:00.000Z"
+    },
+    {
+      "id": "20000000-0000-4000-8000-000000000005",
+      "user_id": "10000000-0000-4000-8000-000000000004",
+      "type": "offer",
+      "title": "Kids’ picture books (5x)",
+      "description": "German and English mix, ages 2–5.",
+      "category": "kids",
+      "condition": "good",
+      "photo_url": null,
+      "district": "Prenzlauer Berg",
+      "lat": 52.5387,
+      "lng": 13.4258,
+      "status": "active",
+      "created_at": "2026-11-14T13:00:00.000Z"
+    },
+    {
+      "id": "20000000-0000-4000-8000-000000000006",
+      "user_id": "10000000-0000-4000-8000-000000000004",
+      "type": "offer",
+      "title": "Bluetooth speaker",
+      "description": "Works great, battery lasts ~6h.",
+      "category": "electronics",
+      "condition": "used",
+      "photo_url": null,
+      "district": "Prenzlauer Berg",
+      "lat": 52.5431,
+      "lng": 13.4302,
+      "status": "active",
+      "created_at": "2026-11-15T14:00:00.000Z"
+    },
+    {
+      "id": "20000000-0000-4000-8000-000000000007",
+      "user_id": "10000000-0000-4000-8000-000000000005",
+      "type": "offer",
+      "title": "Fondue set",
+      "description": "Used twice. Complete with 6 forks.",
+      "category": "home",
+      "condition": "like_new",
+      "photo_url": null,
+      "district": "Wedding",
+      "lat": 52.5469,
+      "lng": 13.3569,
+      "status": "active",
+      "created_at": "2026-11-16T15:00:00.000Z"
+    },
+    {
+      "id": "20000000-0000-4000-8000-000000000008",
+      "user_id": "10000000-0000-4000-8000-000000000005",
+      "type": "search",
+      "title": "Need a yoga mat",
+      "description": "Want to start yoga, anything clean works!",
+      "category": "sports",
+      "condition": "used",
+      "photo_url": null,
+      "district": "Wedding",
+      "lat": 52.5513,
+      "lng": 13.3613,
+      "status": "active",
+      "created_at": "2026-11-17T16:00:00.000Z"
+    },
+    {
+      "id": "20000000-0000-4000-8000-000000000009",
+      "user_id": "10000000-0000-4000-8000-000000000005",
+      "type": "offer",
+      "title": "Sci-fi paperback bundle",
+      "description": "Le Guin, Liu Cixin, Becky Chambers. 4 books.",
+      "category": "books",
+      "condition": "good",
+      "photo_url": null,
+      "district": "Wedding",
+      "lat": 52.5557,
+      "lng": 13.3536,
+      "status": "active",
+      "created_at": "2026-11-18T09:00:00.000Z"
+    },
+    {
+      "id": "20000000-0000-4000-8000-000000000010",
+      "user_id": "10000000-0000-4000-8000-000000000001",
+      "type": "offer",
+      "title": "Pothos in macramé hanger",
+      "description": "Grows like crazy. Hanger is handmade.",
+      "category": "plants",
+      "condition": "good",
+      "photo_url": null,
+      "district": "Neukölln",
+      "lat": 52.4789,
+      "lng": 13.4339,
+      "status": "active",
+      "created_at": "2026-11-19T10:00:00.000Z"
+    },
+    {
+      "id": "20000000-0000-4000-8000-000000000011",
+      "user_id": "10000000-0000-4000-8000-000000000001",
+      "type": "search",
+      "title": "Looking for a cast iron pan",
+      "description": "Happy to swap plants or books.",
+      "category": "home",
+      "condition": "used",
+      "photo_url": null,
+      "district": "Neukölln",
+      "lat": 52.4833,
+      "lng": 13.4383,
+      "status": "active",
+      "created_at": "2026-11-20T11:00:00.000Z"
+    },
+    {
+      "id": "20000000-0000-4000-8000-000000000012",
+      "user_id": "10000000-0000-4000-8000-000000000002",
+      "type": "offer",
+      "title": "Turntable (needs new belt)",
+      "description": "Technics-style, works except the belt.",
+      "category": "electronics",
+      "condition": "used",
+      "photo_url": null,
+      "district": "Kreuzberg",
+      "lat": 52.4931,
+      "lng": 13.3989,
+      "status": "active",
+      "created_at": "2026-11-21T12:00:00.000Z"
+    }
+  ],
+  "chats": [
+    {
+      "id": "30000000-0000-4000-8000-000000000001",
+      "listing_id": "20000000-0000-4000-8000-000000000001",
+      "participant_ids": [
+        "10000000-0000-4000-8000-000000000001",
+        "10000000-0000-4000-8000-000000000002"
+      ],
+      "created_at": "2026-11-22T10:00:00.000Z"
+    },
+    {
+      "id": "30000000-0000-4000-8000-000000000002",
+      "listing_id": "20000000-0000-4000-8000-000000000007",
+      "participant_ids": [
+        "10000000-0000-4000-8000-000000000001",
+        "10000000-0000-4000-8000-000000000005"
+      ],
+      "created_at": "2026-11-23T15:00:00.000Z"
+    }
+  ],
+  "messages": [
+    {
+      "id": "40000000-0000-4000-8000-000000000001",
+      "chat_id": "30000000-0000-4000-8000-000000000001",
+      "sender_id": "10000000-0000-4000-8000-000000000001",
+      "text": "Hey Jonas! Is the Monstera still available?",
+      "created_at": "2026-11-22T10:00:00.000Z"
+    },
+    {
+      "id": "40000000-0000-4000-8000-000000000002",
+      "chat_id": "30000000-0000-4000-8000-000000000001",
+      "sender_id": "10000000-0000-4000-8000-000000000002",
+      "text": "Yes! What would you swap for it?",
+      "created_at": "2026-11-22T11:00:00.000Z"
+    },
+    {
+      "id": "40000000-0000-4000-8000-000000000003",
+      "chat_id": "30000000-0000-4000-8000-000000000001",
+      "sender_id": "10000000-0000-4000-8000-000000000001",
+      "text": "I have a pothos in a macramé hanger 🌿",
+      "created_at": "2026-11-22T12:00:00.000Z"
+    },
+    {
+      "id": "40000000-0000-4000-8000-000000000004",
+      "chat_id": "30000000-0000-4000-8000-000000000001",
+      "sender_id": "10000000-0000-4000-8000-000000000002",
+      "text": "Deal. Saturday at Tempelhofer Feld?",
+      "created_at": "2026-11-22T13:00:00.000Z"
+    },
+    {
+      "id": "40000000-0000-4000-8000-000000000005",
+      "chat_id": "30000000-0000-4000-8000-000000000002",
+      "sender_id": "10000000-0000-4000-8000-000000000001",
+      "text": "Hi Lea, I’d love the fondue set!",
+      "created_at": "2026-11-23T15:00:00.000Z"
+    },
+    {
+      "id": "40000000-0000-4000-8000-000000000006",
+      "chat_id": "30000000-0000-4000-8000-000000000002",
+      "sender_id": "10000000-0000-4000-8000-000000000005",
+      "text": "Sure! Do you have a yoga mat by any chance?",
+      "created_at": "2026-11-23T16:00:00.000Z"
+    }
+  ],
+  "reviews": [
+    {
+      "id": "50000000-0000-4000-8000-000000000001",
+      "reviewer_id": "10000000-0000-4000-8000-000000000002",
+      "reviewee_id": "10000000-0000-4000-8000-000000000001",
+      "rating": 5,
+      "text": "Super friendly, plant was exactly as described.",
+      "created_at": "2026-11-05T12:00:00.000Z"
+    },
+    {
+      "id": "50000000-0000-4000-8000-000000000002",
+      "reviewer_id": "10000000-0000-4000-8000-000000000005",
+      "reviewee_id": "10000000-0000-4000-8000-000000000001",
+      "rating": 5,
+      "text": "Smooth swap, would swap again!",
+      "created_at": "2026-11-06T12:00:00.000Z"
+    },
+    {
+      "id": "50000000-0000-4000-8000-000000000003",
+      "reviewer_id": "10000000-0000-4000-8000-000000000003",
+      "reviewee_id": "10000000-0000-4000-8000-000000000001",
+      "rating": 4,
+      "text": "Nice chat, a bit late but all good.",
+      "created_at": "2026-11-07T12:00:00.000Z"
+    }
+  ]
+}
