@@ -96,6 +96,7 @@ export const supabaseSwipeStubs: Pick<
   | 'getUserInteraction'
   | 'submitReview'
   | 'reportUser'
+  | 'updateProfile'
 > = {
   /*
    * select l.*, earth_distance(ll_to_earth(me.lat, me.lng), ll_to_earth(l.lat, l.lng)) / 1000 as distance_km
@@ -159,6 +160,14 @@ export const supabaseSwipeStubs: Pick<
    * XP nur beim ersten Insert (RPC: xmax = 0 → neu). */
   async submitReview() {
     return todo('submitReview')
+  },
+
+  /* Foto: supabase.storage.from('avatars').upload(`${uid}/avatar.jpg`, blob, { upsert: true }) → getPublicUrl
+   * update users set name = :name, bio = :bio, avatar_url = :url where id = auth.uid() returning *
+   * check constraints: char_length(name) between 2 and 30, char_length(bio) <= 160
+   * Erstes-Foto-XP: Tabelle user_rewards (user_id, reward, unique) → insert ... on conflict do nothing */
+  async updateProfile() {
+    return todo('updateProfile')
   },
 
   /* insert into reports (reporter_id, reported_user_id, reason, details) values (auth.uid(), ...) returning * */

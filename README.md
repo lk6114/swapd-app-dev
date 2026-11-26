@@ -57,6 +57,7 @@ export interface DataAdapter {
   getListing(id: string): Promise<Listing | null>
   createListing(data: NewListing): Promise<CreateListingResult>   // { listing, xp_earned }
   getCurrentUser(): Promise<User | null>
+  updateProfile({ name?, bio?, avatar_url? }): Promise<{ user, xp_earned }>
   getMyAddresses(): Promise<Address[]>                             // nur eigene
   createAddress(data: NewAddress): Promise<Address>
   getUser(id: string): Promise<User | null>
@@ -93,6 +94,7 @@ export interface DataAdapter {
 | `users.rating_avg / rating_count` | **berechnet** aus `reviews` (Durchschnitt auf 1 Nachkommastelle, später View `user_ratings`), nicht in test.json gespeichert |
 | berechnet | `listing.distance_km`, `listing.matches_my_search` (kommt aus der API, nicht gespeichert; später PostGIS / earthdistance) |
 
+- **Profil bearbeiten** (`/profile/edit`, Button „Edit“ im Profil): Name (2–30 Zeichen), Foto (im Browser auf 400 px verkleinert; Mock: Data-URL, Supabase: Storage-Bucket `avatars`), Bio (max. 160). Erstes Profilfoto = **+10 XP**, nur einmal (Overlay `rewards_claimed`). Grenzen stehen als `NAME_MIN/NAME_MAX/BIO_MAX` in `types.ts`.
 - **Bewertungen:** Öffentliches Profil `/users/:id` (aus dem Chat-Header, vom Owner auf der Inserat-Seite, von Bewertungen). „Rate {Name}“ erst nach gemeinsamem Chat, sonst Hinweis. Erste Bewertung einer Person = **+5 XP**, Ändern gibt keine XP. „Report“ ganz unten auf dem Profil, Gemeldete erfahren nichts. Demo: Mika hat Lea und Noah (offene Chats) noch nicht bewertet.
 - **Match-Regel:** Ich like ein Item von X **und** X hat eins meiner aktiven Items geliked → Match + Chat (mit Begrüßung von X) + **25 XP**. Pro Personen-Paar nur ein Match. Undo nimmt Match, Chat und XP wieder zurück.
 - **Swipe-Deck:** nur fremde, aktive Offering-Inserate im Radius, ohne meine Likes (Passes nur mit `include_passed`). Zuerst Items, die zu meinem „Looking for“ passen (gleiche Kategorie + Stichwort → Badge „On your list“, nur Kategorie → leicht vorgezogen), dann nach Nähe.
@@ -171,7 +173,7 @@ src/
   components/ui/ # shadcn-artige Basis (Button, Badge, Card, Input, Chip, Skeleton) im CD
   components/swipe/ # SwipeDeck (Drag per Pointer Events), SwipeCard, MatchOverlay, DeckEmpty
   components/map/   # ListingMap (Leaflet, per React.lazy nachgeladen)
-  screens/       # Swipe, Explore (Map | List), Listing, NewListing, Chats, Chat, Profile, User (fremdes Profil)
+  screens/       # Swipe, Explore (Map | List), Listing, NewListing, Chats, Chat, Profile, EditProfile, User (fremdes Profil)
   hooks/         # useAsync (Lade-/Fehlerzustand), useReducedMotion
   lib/           # format, geo (Haversine, Pin-Verrauschung, Radius-Stufen), geocode (Nominatim), Level/XP, Foto
 ```
@@ -198,6 +200,7 @@ src/
 - **2026-11-26:** **Swipe-to-Swap** ist jetzt die Startseite (Drag mit Rotation + „Want it“/„Nope“-Stamps, Pop-Buttons, Undo, Pfeiltasten, Match-Overlay mit +25 XP und Auto-Chat, Empty State mit Radius-Erweiterung „+N“ und „See passed again“). Feed + Karte zusammen unter **Explore** (Map | List, gemeinsame Filter inkl. Radius). Karte entschieden: **Leaflet** (eigene CD-Pins, Radius-Kreis, Pin → Vorschau → Detail, „Use my location“ mit Fallback). Demo-Daten komplett nach **Stuttgart** (User 1 Mika in Vaihingen am Campus, Radius-Stufen < 5 / 5–10 / 10–30 km). Neu: Tabellen `swipes`, `matches`, `addresses`; `users.search_radius_km`, `users.last_address_id`. **Gespeicherte Adressen:** beim Einstellen Adresse wählen oder neu anlegen (Geocoding via Nominatim), zuletzt gewählte ist vorausgewählt. „Reset demo“ im Profil. Sprache bleibt durchgehend Englisch (auch Fake-Daten).
 - **2026-11-26:** Karte: Sammel-Pins mit Zahl für überlappende Inserate, Klick zeigt alle als Liste. Karte filtert standardmäßig auf „Offering“.
 - **2026-11-26:** User-Rating funktional: `rating_avg`/`rating_count` werden aus `reviews` berechnet (41 Testbewertungen in test.json, z. B. Lea 5.0, Kai 3.5, Ben 2.0). Neues öffentliches Profil `/users/:id` mit „Rate“ (Sterne + Text, +5 XP) und „Report“ (Grund + Details, neue Tabelle `reports`). Chat-Header und Owner-Karte führen zum Profil.
+- **2026-11-26:** Profil-Einstellungen: Name, Profilfoto (+10 XP beim ersten Mal) und Bio änderbar über „Edit“ im Profil.
   Nächste Schritte: echte Fotos für Demo-Inserate · Matches-Liste (z. B. im Chats-Tab) · Adressen im Profil verwalten (umbenennen/löschen) · Kachel-Anbieter mit Key vor echtem Launch.
 
 ## 9. Offene Fragen

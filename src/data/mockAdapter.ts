@@ -23,6 +23,7 @@ import type {
   SwipeDirection,
   User,
 } from './types'
+import { BIO_MAX, NAME_MAX, NAME_MIN } from './types'
 
 /** Mock-Login: "du bist User 1". */
 const CURRENT_USER_ID = '10000000-0000-4000-8000-000000000001'
@@ -33,6 +34,7 @@ const XP_PER_LISTING = 10
 const XP_PER_PHOTO = 10
 const XP_PER_MATCH = 25
 const XP_PER_REVIEW = 5
+const XP_FIRST_AVATAR = 10
 
 /** Für undoLastSwipe: was der Swipe alles ausgelöst hat. */
 interface SwipeLogEntry {
@@ -54,6 +56,8 @@ interface Overlay {
   addresses: Address[]
   reviews: Review[]
   reports: Report[]
+  /** Einmalige Belohnungen, die schon vergeben wurden (z. B. 'first_avatar') */
+  rewards_claimed: string[]
 }
 
 const emptyOverlay = (): Overlay => ({
@@ -68,6 +72,7 @@ const emptyOverlay = (): Overlay => ({
   addresses: [],
   reviews: [],
   reports: [],
+  rewards_claimed: [],
 })
 
 function loadOverlay(): Overlay {
@@ -570,6 +575,35 @@ export const mockAdapter: DataAdapter = {
       .filter((m) => m.user_ids.includes(CURRENT_USER_ID))
       .sort((a, b) => b.created_at.localeCompare(a.created_at))
       .map((m) => clone(withMatchDetails(m)))
+  },
+
+  async updateProfile({ name, bio, avatar_url }) {
+    await delay(250)
+    const patch: Partial<User> = {}
+    if (name !== undefined) {
+      const n = name.trim().replace(/\s+/g, ' ')
+      if (n.length < NAME_MIN || n.length > NAME_MAX) throw new Error(`Name needs ${NAME_MIN}–${NAME_MAX} characters`)
+      patch.name = n
+    }
+    if (bio !== undefined) {
+      const b = bio.trim()
+      if (b.length > BIO_MAX) throw new Error(`Bio can be ${BIO_MAX} characters max`)
+      patch.bio = b
+    }
+    if (avatar_url !== undefined) {
+      if (avatar_url !== null && !/^(data:image\/|https?:\/\/)/.test(avatar_url)) throw new Error('That photo didn’t work')
+      patch.avatar_url = avatar_url
+    }
+    const o = loadOverlay()
+    o.user_patch[CURRENT_USER_ID] = { ...o.user_patch[CURRENT_USER_ID], ...patch }
+    let xp_earned = 0
+    if (patch.avatar_url && !o.rewards_claimed.includes('first_avatar')) {
+      xp_earned = XP_FIRST_AVATAR
+      o.rewards_claimed.push('first_avatar')
+      o.xp_bonus[CURRENT_USER_ID] = (o.xp_bonus[CURRENT_USER_ID] ?? 0) + xp_earned
+    }
+    saveOverlay(o)
+    return { user: clone(me()), xp_earned }
   },
 
   async updateSearchRadius(km) {

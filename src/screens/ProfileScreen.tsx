@@ -1,5 +1,6 @@
 import { useState } from 'react'
-import { MapPin, PackageOpen, Star } from 'lucide-react'
+import { Link } from 'react-router-dom'
+import { MapPin, PackageOpen, Pencil, Star } from 'lucide-react'
 import { api } from '@/data'
 import { useAsync } from '@/hooks/useAsync'
 import { ScreenHeader } from '@/components/ScreenHeader'
@@ -11,6 +12,7 @@ import { ReviewCard } from '@/components/ReviewCard'
 import { useCurrentUser } from '@/components/CurrentUser'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
+import { buttonVariants } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
 import { cn } from '@/lib/utils'
 
@@ -47,7 +49,14 @@ export function ProfileScreen() {
 
   return (
     <>
-      <ScreenHeader title="Profile" />
+      <ScreenHeader
+        title="Profile"
+        right={
+          <Link to="/profile/edit" className={buttonVariants({ variant: 'outline', size: 'sm' })}>
+            <Pencil size={16} strokeWidth={2} /> Edit
+          </Link>
+        }
+      />
       <main className="space-y-5 px-4">
         <div className="flex items-center gap-4">
           <Avatar user={me} size="lg" />
@@ -58,7 +67,13 @@ export function ProfileScreen() {
             </p>
           </div>
         </div>
-        {me.bio && <p>{me.bio}</p>}
+        {me.bio ? (
+          <p>{me.bio}</p>
+        ) : (
+          <Link to="/profile/edit" className="block text-sm font-bold text-ink-muted underline-offset-4 hover:underline">
+            + Add a bio so people know what you swap
+          </Link>
+        )}
 
         <Card className="p-4">
           <XpBar xp={me.xp} />

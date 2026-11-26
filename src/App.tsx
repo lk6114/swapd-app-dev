@@ -10,6 +10,7 @@ import { ChatsScreen } from '@/screens/ChatsScreen'
 import { ChatScreen } from '@/screens/ChatScreen'
 import { ProfileScreen } from '@/screens/ProfileScreen'
 import { UserScreen } from '@/screens/UserScreen'
+import { EditProfileScreen } from '@/screens/EditProfileScreen'
 
 export default function App() {
   return (
@@ -29,6 +30,7 @@ export default function App() {
               <Route path="/new" element={<NewListingScreen />} />
               <Route path="/chats/:id" element={<ChatScreen />} />
               <Route path="/users/:id" element={<UserScreen />} />
+              <Route path="/profile/edit" element={<EditProfileScreen />} />
             </Route>
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>

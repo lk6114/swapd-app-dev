@@ -183,6 +183,26 @@ export interface NewReport {
   details: string
 }
 
+export const NAME_MIN = 2
+export const NAME_MAX = 30
+export const BIO_MAX = 160
+
+/** Profil-Einstellungen. Nur übergebene Felder werden geändert. */
+export interface ProfileUpdate {
+  /** Anzeigename, 2–30 Zeichen */
+  name?: string
+  /** max. 160 Zeichen */
+  bio?: string
+  /** Mock: Data-URL; Supabase: public URL aus Storage-Bucket "avatars". null = Foto entfernen */
+  avatar_url?: string | null
+}
+
+export interface UpdateProfileResult {
+  user: User
+  /** +10 XP beim allerersten Profilfoto */
+  xp_earned: number
+}
+
 /** Was ich mit einer anderen Person machen darf / schon gemacht habe. */
 export interface UserInteraction {
   /** Bewerten nur nach gemeinsamem Chat (= Tauschkontakt). */
@@ -223,6 +243,7 @@ export interface DataAdapter {
 
   // Users
   getCurrentUser(): Promise<User | null>
+  updateProfile(data: ProfileUpdate): Promise<UpdateProfileResult>
   /** Meine gespeicherten Adressen (nur eigene, nie fremde). */
   getMyAddresses(): Promise<Address[]>
   createAddress(data: NewAddress): Promise<Address>
