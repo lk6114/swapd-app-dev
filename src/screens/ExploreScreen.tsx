@@ -68,7 +68,10 @@ export function ExploreScreen() {
 
   // Filter liegen in der URL → nach Detail → Zurück ist alles noch da
   const view: View = params.get('view') === 'map' ? 'map' : 'list'
-  const type = (['offer', 'search'].includes(params.get('type') ?? '') ? params.get('type') : 'all') as TypeFilter
+  // Standard: Karte zeigt "Offering", Liste zeigt alles. Abweichungen stehen explizit in der URL.
+  const defaultType: TypeFilter = view === 'map' ? 'offer' : 'all'
+  const typeParam = params.get('type') as TypeFilter | null
+  const type: TypeFilter = typeParam && ['all', 'offer', 'search'].includes(typeParam) ? typeParam : defaultType
   const category = (CATEGORIES as readonly string[]).includes(params.get('cat') ?? '')
     ? (params.get('cat') as Category)
     : undefined
@@ -97,7 +100,7 @@ export function ExploreScreen() {
   const [near, setNear] = useState<LatLng | null>(null)
   const [locating, setLocating] = useState(false)
   const [radiusOpen, setRadiusOpen] = useState(false)
-  const [selected, setSelected] = useState<Listing | null>(null)
+  const [selected, setSelected] = useState<Listing[] | null>(null)
 
   const filter = {
     type: type === 'all' ? undefined : type,
@@ -120,9 +123,13 @@ export function ExploreScreen() {
   const center: LatLng | null = near ?? (me ? { lat: me.lat, lng: me.lng } : null)
   const nextRadius = RADIUS_STEPS.find((km) => km > radius)
 
-  // Auswahl verwerfen, wenn das Inserat durch Filter verschwindet
+  const selectedIds = useMemo(() => new Set((selected ?? []).map((l) => l.id)), [selected])
+
+  // Auswahl verwerfen, wenn die Inserate durch Filter verschwinden
   useEffect(() => {
-    if (selected && visible && !visible.some((l) => l.id === selected.id)) setSelected(null)
+    if (!selected || !visible) return
+    const still = selected.filter((s) => visible.some((l) => l.id === s.id))
+    if (still.length !== selected.length) setSelected(still.length ? still : null)
   }, [visible, selected])
 
   function toggleMyLocation() {
@@ -175,7 +182,7 @@ export function ExploreScreen() {
         <Segment
           label="Type"
           value={type}
-          onChange={(v) => setParam('type', v === 'all' ? null : v)}
+          onChange={(v) => setParam('type', v === defaultType ? null : v)}
           options={[
             { value: 'all', label: 'All' },
             { value: 'offer', label: 'Offering' },
@@ -290,7 +297,7 @@ export function ExploreScreen() {
               center={center}
               radiusKm={radius}
               matchedIds={matchedIds}
-              selectedId={selected?.id ?? null}
+              selectedIds={selectedIds}
               onSelect={setSelected}
             />
           </Suspense>
@@ -325,7 +332,7 @@ export function ExploreScreen() {
               </div>
             )}
 
-            {selected && (
+            {selected?.length === 1 && (
               <div className="absolute inset-x-3 bottom-8 z-[1000] motion-safe:animate-[sheet-in_.2s_ease-out]">
                 <button
                   onClick={() => setSelected(null)}
@@ -334,7 +341,33 @@ export function ExploreScreen() {
                 >
                   <X size={16} strokeWidth={2.5} />
                 </button>
-                <ListingRow listing={selected} me={me} />
+                <ListingRow listing={selected[0]} me={me} />
+              </div>
+            )}
+
+            {selected && selected.length > 1 && (
+              <div
+                role="dialog"
+                aria-label={`${selected.length} swaps here`}
+                className="absolute inset-x-3 bottom-8 z-[1000] flex max-h-[65%] flex-col rounded-md border-2 border-ink bg-white shadow-pop motion-safe:animate-[sheet-in_.2s_ease-out]"
+              >
+                <div className="flex shrink-0 items-center justify-between border-b border-line py-2 pl-4 pr-2">
+                  <p className="font-display text-lg font-bold">{selected.length} swaps here</p>
+                  <button
+                    onClick={() => setSelected(null)}
+                    aria-label="Close list"
+                    className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-ink/5"
+                  >
+                    <X size={18} strokeWidth={2.5} />
+                  </button>
+                </div>
+                <ul className="min-h-0 divide-y divide-line overflow-y-auto overscroll-contain">
+                  {selected.map((l) => (
+                    <li key={l.id}>
+                      <ListingRow listing={l} me={me} plain />
+                    </li>
+                  ))}
+                </ul>
               </div>
             )}
           </>

@@ -91,6 +91,29 @@
 .swapd-pin--match { background: #2fb37a; }
 .swapd-pin--match::after { background: #1c1a2b; }
 .swapd-pin.is-selected { transform: rotate(-45deg) scale(1.3); }
+
+/* Sammel-Pin: runder Pop-Kreis mit Anzahl */
+.swapd-cluster {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 9999px;
+  border: 2px solid #1c1a2b;
+  box-shadow: 0 3px 0 #1c1a2b;
+  font-family: 'Bricolage Grotesque', system-ui, sans-serif;
+  font-weight: 800;
+  font-size: 15px;
+  line-height: 1;
+  transition: transform 0.12s ease-out;
+}
+.swapd-cluster--offer { background: #d13a6b; color: #ffffff; }
+.swapd-cluster--search { background: #ffffff; color: #1c1a2b; border-width: 3px; }
+.swapd-cluster--match { background: #2fb37a; color: #1c1a2b; }
+.swapd-cluster.is-selected { transform: scale(1.2); }
+
 @media (prefers-reduced-motion: reduce) {
-  .swapd-pin { transition: none; }
+  .swapd-pin,
+  .swapd-cluster { transition: none; }
 }

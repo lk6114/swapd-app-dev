@@ -36,14 +36,32 @@ export function ListingCard({ listing, me }: { listing: Listing; me?: User | nul
   )
 }
 
-/** Kompakte Zeile (z. B. im Karten-Sheet). */
-export function ListingRow({ listing, me, className }: { listing: Listing; me?: User | null; className?: string }) {
+/** Kompakte Zeile (z. B. im Karten-Sheet). `plain` = ohne Rahmen, für Listen. */
+export function ListingRow({
+  listing,
+  me,
+  className,
+  plain,
+}: {
+  listing: Listing
+  me?: User | null
+  className?: string
+  plain?: boolean
+}) {
   return (
     <Link
       to={`/listing/${listing.id}`}
-      className={cn('flex items-center gap-3 rounded-md border-2 border-ink bg-white p-2 pr-3 shadow-pop', className)}
+      className={cn(
+        'flex items-center gap-3 bg-white p-2 pr-3',
+        plain ? 'transition-colors hover:bg-surface' : 'rounded-md border-2 border-ink shadow-pop',
+        className,
+      )}
     >
-      <ListingPhoto listing={listing} className="h-20 w-20 shrink-0 rounded-sm" iconSize={32} />
+      <ListingPhoto
+        listing={listing}
+        className={cn('shrink-0 rounded-sm', plain ? 'h-16 w-16' : 'h-20 w-20')}
+        iconSize={plain ? 26 : 32}
+      />
       <div className="min-w-0 flex-1">
         <TypeBadge type={listing.type} />
         <p className="mt-1 truncate font-bold">{listing.title}</p>
