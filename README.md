@@ -60,6 +60,9 @@ export interface DataAdapter {
   getMyAddresses(): Promise<Address[]>                             // nur eigene
   createAddress(data: NewAddress): Promise<Address>
   getUser(id: string): Promise<User | null>
+  getUserInteraction(userId): Promise<{ can_rate, my_review, reported }>
+  submitReview({ reviewee_id, rating, text }): Promise<{ review, xp_earned }>
+  reportUser({ reported_user_id, reason, details }): Promise<Report>
   getReviews(userId: string): Promise<Review[]>
   getChats(): Promise<Chat[]>
   getChat(id: string): Promise<Chat | null>
@@ -85,8 +88,12 @@ export interface DataAdapter {
 | `listings` | + `address_id`. `district`/`lat`/`lng` werden beim Anlegen aus der Adresse übernommen (Snapshot) |
 | `swipes` | `id, user_id, listing_id, direction ('like' \| 'pass'), created_at`. Ein Swipe pro User + Listing (Upsert: aus „pass“ kann „like“ werden) |
 | `matches` | `id, user_ids[], listing_ids[] ([ihr Item, mein Item]), chat_id, created_at` |
+| `reviews` | `id, reviewer_id, reviewee_id, rating (1–5), text, created_at`. Eine Bewertung pro Paar, änderbar (Upsert). Bewerten nur nach gemeinsamem Chat |
+| `reports` | `id, reporter_id, reported_user_id, reason ('no_show' \| 'scam' \| 'offensive' \| 'fake_listing' \| 'other'), details, created_at`. Nur einfügen, lesen später nur das Team |
+| `users.rating_avg / rating_count` | **berechnet** aus `reviews` (Durchschnitt auf 1 Nachkommastelle, später View `user_ratings`), nicht in test.json gespeichert |
 | berechnet | `listing.distance_km`, `listing.matches_my_search` (kommt aus der API, nicht gespeichert; später PostGIS / earthdistance) |
 
+- **Bewertungen:** Öffentliches Profil `/users/:id` (aus dem Chat-Header, vom Owner auf der Inserat-Seite, von Bewertungen). „Rate {Name}“ erst nach gemeinsamem Chat, sonst Hinweis. Erste Bewertung einer Person = **+5 XP**, Ändern gibt keine XP. „Report“ ganz unten auf dem Profil, Gemeldete erfahren nichts. Demo: Mika hat Lea und Noah (offene Chats) noch nicht bewertet.
 - **Match-Regel:** Ich like ein Item von X **und** X hat eins meiner aktiven Items geliked → Match + Chat (mit Begrüßung von X) + **25 XP**. Pro Personen-Paar nur ein Match. Undo nimmt Match, Chat und XP wieder zurück.
 - **Swipe-Deck:** nur fremde, aktive Offering-Inserate im Radius, ohne meine Likes (Passes nur mit `include_passed`). Zuerst Items, die zu meinem „Looking for“ passen (gleiche Kategorie + Stichwort → Badge „On your list“, nur Kategorie → leicht vorgezogen), dann nach Nähe.
 - **Datenschutz:** Exakte Adressen verlassen die API nur für den Owner (`getMyAddresses`). Fremde Inserate kommen ohne `address_id`. UI zeigt nur „1.2 km · Vaihingen“. Karten-Pins werden in `src/lib/geo.ts` (`fuzzLocation`) um 60–150 m versetzt und gerundet.
@@ -164,7 +171,7 @@ src/
   components/ui/ # shadcn-artige Basis (Button, Badge, Card, Input, Chip, Skeleton) im CD
   components/swipe/ # SwipeDeck (Drag per Pointer Events), SwipeCard, MatchOverlay, DeckEmpty
   components/map/   # ListingMap (Leaflet, per React.lazy nachgeladen)
-  screens/       # Swipe, Explore (Map | List), Listing, NewListing, Chats, Chat, Profile
+  screens/       # Swipe, Explore (Map | List), Listing, NewListing, Chats, Chat, Profile, User (fremdes Profil)
   hooks/         # useAsync (Lade-/Fehlerzustand), useReducedMotion
   lib/           # format, geo (Haversine, Pin-Verrauschung, Radius-Stufen), geocode (Nominatim), Level/XP, Foto
 ```
@@ -190,6 +197,7 @@ src/
 - **2026-11-25:** Hosting entschieden: **GitHub Pages** mit Actions-Deploy (siehe Abschnitt 6). Base-Pfad `/swapd-app-dev/`, 404.html-Fallback, `asset()`-Helper für public-Dateien. Einmalig im Repo nötig: Settings → Pages → Source = „GitHub Actions“.
 - **2026-11-26:** **Swipe-to-Swap** ist jetzt die Startseite (Drag mit Rotation + „Want it“/„Nope“-Stamps, Pop-Buttons, Undo, Pfeiltasten, Match-Overlay mit +25 XP und Auto-Chat, Empty State mit Radius-Erweiterung „+N“ und „See passed again“). Feed + Karte zusammen unter **Explore** (Map | List, gemeinsame Filter inkl. Radius). Karte entschieden: **Leaflet** (eigene CD-Pins, Radius-Kreis, Pin → Vorschau → Detail, „Use my location“ mit Fallback). Demo-Daten komplett nach **Stuttgart** (User 1 Mika in Vaihingen am Campus, Radius-Stufen < 5 / 5–10 / 10–30 km). Neu: Tabellen `swipes`, `matches`, `addresses`; `users.search_radius_km`, `users.last_address_id`. **Gespeicherte Adressen:** beim Einstellen Adresse wählen oder neu anlegen (Geocoding via Nominatim), zuletzt gewählte ist vorausgewählt. „Reset demo“ im Profil. Sprache bleibt durchgehend Englisch (auch Fake-Daten).
 - **2026-11-26:** Karte: Sammel-Pins mit Zahl für überlappende Inserate, Klick zeigt alle als Liste. Karte filtert standardmäßig auf „Offering“.
+- **2026-11-26:** User-Rating funktional: `rating_avg`/`rating_count` werden aus `reviews` berechnet (41 Testbewertungen in test.json, z. B. Lea 5.0, Kai 3.5, Ben 2.0). Neues öffentliches Profil `/users/:id` mit „Rate“ (Sterne + Text, +5 XP) und „Report“ (Grund + Details, neue Tabelle `reports`). Chat-Header und Owner-Karte führen zum Profil.
   Nächste Schritte: echte Fotos für Demo-Inserate · Matches-Liste (z. B. im Chats-Tab) · Adressen im Profil verwalten (umbenennen/löschen) · Kachel-Anbieter mit Key vor echtem Launch.
 
 ## 9. Offene Fragen

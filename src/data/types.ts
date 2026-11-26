@@ -55,6 +55,7 @@ export interface User {
   avatar_url: string | null
   xp: number
   swaps_count: number
+  /** Berechnet aus reviews (nicht gespeichert; später Postgres-View user_ratings). 0 = noch keine Bewertung. */
   rating_avg: number
   rating_count: number
   lat: number
@@ -139,14 +140,55 @@ export interface RecordSwipeResult {
   xp_earned: number
 }
 
+/** Tabelle reviews: eine Bewertung pro (reviewer_id, reviewee_id), änderbar. */
 export interface Review {
   id: string
   reviewer_id: string
   reviewee_id: string
+  /** 1–5 Sterne */
   rating: number
   text: string
   created_at: string
   reviewer?: User
+}
+
+export interface NewReview {
+  reviewee_id: string
+  rating: number
+  text: string
+}
+
+export interface SubmitReviewResult {
+  review: Review
+  /** XP nur für die erste Bewertung einer Person, nicht fürs Ändern. */
+  xp_earned: number
+}
+
+export const REPORT_REASONS = ['no_show', 'scam', 'offensive', 'fake_listing', 'other'] as const
+export type ReportReason = (typeof REPORT_REASONS)[number]
+
+/** Tabelle reports: nur einfügen, lesen kann später nur das Team (Moderation). */
+export interface Report {
+  id: string
+  reporter_id: string
+  reported_user_id: string
+  reason: ReportReason
+  details: string
+  created_at: string
+}
+
+export interface NewReport {
+  reported_user_id: string
+  reason: ReportReason
+  details: string
+}
+
+/** Was ich mit einer anderen Person machen darf / schon gemacht habe. */
+export interface UserInteraction {
+  /** Bewerten nur nach gemeinsamem Chat (= Tauschkontakt). */
+  can_rate: boolean
+  my_review: Review | null
+  reported: boolean
 }
 
 export interface Chat {
@@ -186,6 +228,10 @@ export interface DataAdapter {
   createAddress(data: NewAddress): Promise<Address>
   getUser(id: string): Promise<User | null>
   getReviews(userId: string): Promise<Review[]>
+  getUserInteraction(userId: string): Promise<UserInteraction>
+  /** Bewertung anlegen oder ändern (Upsert). Rating wird danach neu berechnet. */
+  submitReview(data: NewReview): Promise<SubmitReviewResult>
+  reportUser(data: NewReport): Promise<Report>
 
   // Chats
   getChats(): Promise<Chat[]>

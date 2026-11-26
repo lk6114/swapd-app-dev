@@ -29,7 +29,7 @@ export function Sheet({
       <button aria-label="Close" className="absolute inset-0 bg-ink/40" onClick={onClose} />
       <div
         className={cn(
-          'pb-safe relative w-full max-w-lg rounded-t-lg border-x-2 border-t-2 border-ink bg-white motion-safe:animate-[sheet-in_.22s_ease-out]',
+          'pb-safe relative max-h-[90dvh] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-lg border-x-2 border-t-2 border-ink bg-white motion-safe:animate-[sheet-in_.22s_ease-out]',
           className,
         )}
       >

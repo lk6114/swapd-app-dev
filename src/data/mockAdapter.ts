@@ -16,6 +16,7 @@ import type {
   Message,
   NewListing,
   RecordSwipeResult,
+  Report,
   Review,
   Swipe,
   SwipeDeckOptions,
@@ -31,6 +32,7 @@ const STORAGE_KEY = 'swapd:mock:v2'
 const XP_PER_LISTING = 10
 const XP_PER_PHOTO = 10
 const XP_PER_MATCH = 25
+const XP_PER_REVIEW = 5
 
 /** Für undoLastSwipe: was der Swipe alles ausgelöst hat. */
 interface SwipeLogEntry {
@@ -50,6 +52,8 @@ interface Overlay {
   swipe_log: SwipeLogEntry[]
   user_patch: Record<string, Partial<User>>
   addresses: Address[]
+  reviews: Review[]
+  reports: Report[]
 }
 
 const emptyOverlay = (): Overlay => ({
@@ -62,6 +66,8 @@ const emptyOverlay = (): Overlay => ({
   swipe_log: [],
   user_patch: {},
   addresses: [],
+  reviews: [],
+  reports: [],
 })
 
 function loadOverlay(): Overlay {
@@ -97,16 +103,34 @@ const clone = <T,>(v: T): T => JSON.parse(JSON.stringify(v))
 
 function users(): User[] {
   const { xp_bonus, user_patch } = loadOverlay()
-  return (seed.users as User[]).map((u) => ({
-    ...u,
-    ...user_patch[u.id],
-    xp: u.xp + (xp_bonus[u.id] ?? 0),
-  }))
+  // Rating = berechnet aus reviews (wie später eine Postgres-View user_ratings)
+  const stats = new Map<string, { sum: number; count: number }>()
+  for (const r of reviews()) {
+    const s = stats.get(r.reviewee_id) ?? { sum: 0, count: 0 }
+    stats.set(r.reviewee_id, { sum: s.sum + r.rating, count: s.count + 1 })
+  }
+  return (seed.users as User[]).map((u) => {
+    const s = stats.get(u.id)
+    return {
+      ...u,
+      ...user_patch[u.id],
+      xp: u.xp + (xp_bonus[u.id] ?? 0),
+      rating_avg: s ? Math.round((s.sum / s.count) * 10) / 10 : 0,
+      rating_count: s?.count ?? 0,
+    }
+  })
 }
 const listings = (): Listing[] => [...(seed.listings as Listing[]), ...loadOverlay().listings]
 const chats = (): Chat[] => [...(seed.chats as Chat[]), ...loadOverlay().chats]
 const messages = (): Message[] => [...(seed.messages as Message[]), ...loadOverlay().messages]
-const reviews = (): Review[] => seed.reviews as Review[]
+/** Eine Bewertung pro (reviewer_id, reviewee_id) – Overlay überschreibt Seed (Upsert). */
+function reviews(): Review[] {
+  const byKey = new Map<string, Review>()
+  for (const r of [...(seed.reviews as Review[]), ...loadOverlay().reviews]) byKey.set(`${r.reviewer_id}|${r.reviewee_id}`, r)
+  return [...byKey.values()]
+}
+const hasChatWith = (userId: string) =>
+  chats().some((c) => c.participant_ids.includes(CURRENT_USER_ID) && c.participant_ids.includes(userId))
 const addresses = (): Address[] => [...(seed.addresses as Address[]), ...loadOverlay().addresses]
 const matches = (): Match[] => [...(seed.matches as Match[]), ...loadOverlay().matches]
 
@@ -304,6 +328,58 @@ export const mockAdapter: DataAdapter = {
       .filter((r) => r.reviewee_id === userId)
       .sort((a, b) => b.created_at.localeCompare(a.created_at))
       .map((r) => clone({ ...r, reviewer: publicUser(findUser(r.reviewer_id)) }))
+  },
+
+  async getUserInteraction(userId) {
+    await delay(100)
+    const mine = reviews().find((r) => r.reviewer_id === CURRENT_USER_ID && r.reviewee_id === userId) ?? null
+    return clone({
+      can_rate: userId !== CURRENT_USER_ID && hasChatWith(userId),
+      my_review: mine,
+      reported: loadOverlay().reports.some((r) => r.reporter_id === CURRENT_USER_ID && r.reported_user_id === userId),
+    })
+  },
+
+  async submitReview({ reviewee_id, rating, text }) {
+    await delay(250)
+    if (reviewee_id === CURRENT_USER_ID) throw new Error('You can’t rate yourself')
+    if (!findUser(reviewee_id)) throw new Error('User not found')
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5) throw new Error('Pick 1 to 5 stars')
+    if (!hasChatWith(reviewee_id)) throw new Error('Chat first, then rate')
+    const existing = reviews().find((r) => r.reviewer_id === CURRENT_USER_ID && r.reviewee_id === reviewee_id)
+    const review: Review = {
+      id: existing?.id ?? uuid(),
+      reviewer_id: CURRENT_USER_ID,
+      reviewee_id,
+      rating,
+      text: text.trim().slice(0, 300),
+      created_at: new Date().toISOString(),
+    }
+    const xp_earned = existing ? 0 : XP_PER_REVIEW
+    const o = loadOverlay()
+    o.reviews = o.reviews.filter((r) => !(r.reviewer_id === CURRENT_USER_ID && r.reviewee_id === reviewee_id))
+    o.reviews.push(review)
+    if (xp_earned) o.xp_bonus[CURRENT_USER_ID] = (o.xp_bonus[CURRENT_USER_ID] ?? 0) + xp_earned
+    saveOverlay(o)
+    return { review: clone({ ...review, reviewer: findUser(CURRENT_USER_ID) }), xp_earned }
+  },
+
+  async reportUser({ reported_user_id, reason, details }) {
+    await delay(250)
+    if (reported_user_id === CURRENT_USER_ID) throw new Error('You can’t report yourself')
+    if (!findUser(reported_user_id)) throw new Error('User not found')
+    const report: Report = {
+      id: uuid(),
+      reporter_id: CURRENT_USER_ID,
+      reported_user_id,
+      reason,
+      details: details.trim().slice(0, 500),
+      created_at: new Date().toISOString(),
+    }
+    const o = loadOverlay()
+    o.reports.push(report)
+    saveOverlay(o)
+    return clone(report)
   },
 
   async getChats() {

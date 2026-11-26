@@ -2,13 +2,12 @@ import { useState } from 'react'
 import { MapPin, PackageOpen, Star } from 'lucide-react'
 import { api } from '@/data'
 import { useAsync } from '@/hooks/useAsync'
-import { timeAgo } from '@/lib/format'
 import { ScreenHeader } from '@/components/ScreenHeader'
 import { Avatar } from '@/components/Avatar'
 import { XpBar } from '@/components/XpBar'
-import { Stars } from '@/components/Stars'
 import { ListingCard, ListingCardSkeleton } from '@/components/ListingCard'
 import { EmptyState } from '@/components/EmptyState'
+import { ReviewCard } from '@/components/ReviewCard'
 import { useCurrentUser } from '@/components/CurrentUser'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
@@ -72,7 +71,7 @@ export function ProfileScreen() {
         <div className="grid grid-cols-3 gap-3 text-center">
           {[
             { value: me.swaps_count, label: 'Swaps' },
-            { value: me.rating_avg.toFixed(1), label: 'Rating' },
+            { value: me.rating_count ? me.rating_avg.toFixed(1) : '–', label: `Rating (${me.rating_count})` },
             { value: listings?.length ?? '–', label: 'Listings' },
           ].map((s) => (
             <Card key={s.label} className="py-3">
@@ -117,17 +116,9 @@ export function ProfileScreen() {
           ) : reviews?.length ? (
             <ul className="space-y-3">
               {reviews.map((r) => (
-                <Card key={r.id} className="p-4">
-                  <div className="flex items-center gap-3">
-                    <Avatar user={r.reviewer} size="sm" />
-                    <div className="flex-1">
-                      <p className="font-bold">{r.reviewer?.name}</p>
-                      <Stars value={r.rating} size={12} />
-                    </div>
-                    <span className="text-xs text-ink-muted">{timeAgo(r.created_at)}</span>
-                  </div>
-                  <p className="mt-2 text-sm">{r.text}</p>
-                </Card>
+                <li key={r.id}>
+                  <ReviewCard review={r} meId={me.id} />
+                </li>
               ))}
             </ul>
           ) : (

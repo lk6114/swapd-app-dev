@@ -58,11 +58,44 @@ const todo = (what: string): never => {
  *   created_at timestamptz not null default now()
  * );
  * create index on matches using gin (user_ids);
+ *
+ * -- Bewertungen: eine pro Paar, änderbar. Nur nach gemeinsamem Chat (Check im RPC oder per Policy).
+ * alter table reviews add constraint reviews_rating_range check (rating between 1 and 5);
+ * alter table reviews add constraint reviews_once unique (reviewer_id, reviewee_id);
+ * alter table reviews add constraint reviews_not_self check (reviewer_id <> reviewee_id);
+ * -- rating_avg / rating_count werden NICHT gespeichert, sondern berechnet:
+ * create view user_ratings as
+ *   select reviewee_id as user_id, round(avg(rating)::numeric, 1) as rating_avg, count(*) as rating_count
+ *   from reviews group by reviewee_id;
+ * -- users mit Rating: select u.*, coalesce(r.rating_avg, 0), coalesce(r.rating_count, 0) from users u left join user_ratings r on r.user_id = u.id
+ *
+ * -- Meldungen: alle dürfen einfügen, niemand außer dem Team darf lesen
+ * create type report_reason as enum ('no_show', 'scam', 'offensive', 'fake_listing', 'other');
+ * create table reports (
+ *   id uuid primary key default gen_random_uuid(),
+ *   reporter_id uuid not null references users(id) on delete cascade,
+ *   reported_user_id uuid not null references users(id) on delete cascade,
+ *   reason report_reason not null,
+ *   details text not null default '',
+ *   created_at timestamptz not null default now()
+ * );
+ * alter table reports enable row level security;
+ * create policy "insert own reports" on reports for insert with check (reporter_id = auth.uid());
+ * create policy "see own reports" on reports for select using (reporter_id = auth.uid());
  */
 
 export const supabaseSwipeStubs: Pick<
   DataAdapter,
-  'getSwipeDeck' | 'recordSwipe' | 'undoLastSwipe' | 'getMatches' | 'updateSearchRadius' | 'getMyAddresses' | 'createAddress'
+  | 'getSwipeDeck'
+  | 'recordSwipe'
+  | 'undoLastSwipe'
+  | 'getMatches'
+  | 'updateSearchRadius'
+  | 'getMyAddresses'
+  | 'createAddress'
+  | 'getUserInteraction'
+  | 'submitReview'
+  | 'reportUser'
 > = {
   /*
    * select l.*, earth_distance(ll_to_earth(me.lat, me.lng), ll_to_earth(l.lat, l.lng)) / 1000 as distance_km
@@ -112,5 +145,24 @@ export const supabaseSwipeStubs: Pick<
   /* insert into addresses (...) values (...) returning *  – Geocoding passiert vorher im Client (src/lib/geocode.ts) */
   async createAddress() {
     return todo('createAddress')
+  },
+
+  /* can_rate: exists(select 1 from chats where auth.uid() = any(participant_ids) and :user_id = any(participant_ids))
+   * my_review: select * from reviews where reviewer_id = auth.uid() and reviewee_id = :user_id
+   * reported:  exists(select 1 from reports where reporter_id = auth.uid() and reported_user_id = :user_id) */
+  async getUserInteraction() {
+    return todo('getUserInteraction')
+  },
+
+  /* insert into reviews (reviewer_id, reviewee_id, rating, text) values (auth.uid(), ...)
+   * on conflict (reviewer_id, reviewee_id) do update set rating = excluded.rating, text = excluded.text, created_at = now()
+   * XP nur beim ersten Insert (RPC: xmax = 0 → neu). */
+  async submitReview() {
+    return todo('submitReview')
+  },
+
+  /* insert into reports (reporter_id, reported_user_id, reason, details) values (auth.uid(), ...) returning * */
+  async reportUser() {
+    return todo('reportUser')
   },
 }

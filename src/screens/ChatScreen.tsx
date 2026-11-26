@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { SendHorizontal } from 'lucide-react'
+import { ChevronRight, SendHorizontal } from 'lucide-react'
+import { Stars } from '@/components/Stars'
 import { api, type Message } from '@/data'
 import { useAsync } from '@/hooks/useAsync'
 import { formatTime } from '@/lib/format'
@@ -44,10 +45,34 @@ export function ChatScreen() {
       <ScreenHeader
         back
         title={
-          <span className="flex items-center gap-2">
-            <Avatar user={chat?.other_user} size="sm" />
-            <span className="truncate">{chat?.other_user?.name ?? '…'}</span>
-          </span>
+          chat?.other_user ? (
+            <Link
+              to={`/users/${chat.other_user.id}`}
+              className="-my-1 flex items-center gap-2 rounded-full py-1 pr-2 hover:bg-ink/5"
+              aria-label={`Open ${chat.other_user.name}'s profile`}
+            >
+              <Avatar user={chat.other_user} size="sm" />
+              <span className="min-w-0 leading-tight">
+                <span className="block truncate">{chat.other_user.name}</span>
+                <span className="flex items-center gap-1 font-sans text-xs font-normal text-ink-muted">
+                  {chat.other_user.rating_count > 0 ? (
+                    <>
+                      <Stars value={chat.other_user.rating_avg} size={10} /> {chat.other_user.rating_avg.toFixed(1)}
+                    </>
+                  ) : (
+                    'No ratings yet'
+                  )}
+                  <span aria-hidden>·</span> View profile
+                </span>
+              </span>
+              <ChevronRight size={18} strokeWidth={2} className="shrink-0 text-ink-muted" />
+            </Link>
+          ) : (
+            <span className="flex items-center gap-2">
+              <Avatar size="sm" />
+              <span className="truncate">…</span>
+            </span>
+          )
         }
       />
 

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
-import { MapPin, Repeat2, SearchX } from 'lucide-react'
+import { ChevronRight, MapPin, Repeat2, SearchX } from 'lucide-react'
 import { api } from '@/data'
 import { useAsync } from '@/hooks/useAsync'
 import { CATEGORY_LABEL, CONDITION_LABEL, distanceKm, formatDistance, timeAgo } from '@/lib/format'
@@ -86,15 +86,25 @@ export function ListingScreen() {
         {listing.description && <p className="leading-relaxed">{listing.description}</p>}
 
         {owner && (
-          <Card className="flex items-center gap-3 p-4">
-            <Avatar user={owner} />
-            <div className="min-w-0 flex-1">
-              <p className="font-bold">{isMine ? 'You' : owner.name}</p>
-              <p className="flex items-center gap-1.5 text-sm text-ink-muted">
-                <Stars value={owner.rating_avg} size={12} /> {owner.rating_avg.toFixed(1)} · {owner.swaps_count} swaps
-              </p>
-            </div>
-          </Card>
+          <Link to={isMine ? '/profile' : `/users/${owner.id}`} className="block">
+            <Card className="flex items-center gap-3 p-4 transition-colors hover:border-ink/40">
+              <Avatar user={owner} />
+              <div className="min-w-0 flex-1">
+                <p className="font-bold">{isMine ? 'You' : owner.name}</p>
+                <p className="flex items-center gap-1.5 text-sm text-ink-muted">
+                  {owner.rating_count > 0 ? (
+                    <>
+                      <Stars value={owner.rating_avg} size={12} /> {owner.rating_avg.toFixed(1)} ({owner.rating_count})
+                    </>
+                  ) : (
+                    'No ratings yet'
+                  )}{' '}
+                  · {owner.swaps_count} swaps
+                </p>
+              </div>
+              <ChevronRight size={20} strokeWidth={2} className="shrink-0 text-ink-muted" />
+            </Card>
+          </Link>
         )}
       </div>
 
