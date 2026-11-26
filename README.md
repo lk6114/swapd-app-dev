@@ -1,6 +1,6 @@
 # swap'd – App Dev
 
-> **Tauschen statt kaufen.** SoLoMo-Tausch-App ohne Geld (Uni-Projekt Marketing/UX).
+> **Swap, don't shop.** SoLoMo-Tausch-App ohne Geld (Uni-Projekt Marketing/UX).
 > Diese README ist der **Arbeitskontext für Claude**: Entscheidungen, Architektur, Regeln.
 > Vor jeder Session lesen, nach wichtigen Entscheidungen aktualisieren.
 > Lars codet nicht selbst → Claude baut, erklärt kurz, auf Deutsch, locker, per Du.
@@ -22,7 +22,7 @@
 | Styling | **Tailwind CSS**, CD als Theme-Tokens |
 | UI-Bausteine | **shadcn/ui** (an CD angepasst) |
 | Icons | **Lucide** (runde Line-Icons, 2 px) |
-| Karte | **MapLibre** oder **Leaflet** (noch offen) |
+| Karte | **Leaflet 1.9 + react-leaflet 4** (entschieden 2026-11-26), OSM-Kacheln gedämpft |
 | PWA | **vite-plugin-pwa** |
 | Daten Phase 1 | **Mock-Adapter**: `test.json` + localStorage |
 | Daten Phase 2 | **Supabase Cloud** (Free Plan): Auth, Postgres, Realtime-Chat, Storage |
@@ -44,11 +44,11 @@ Struktur (umgesetzt):
 
 ```
 src/data/
-  types.ts            # Listing, User, Chat, Message, Review, DataAdapter-Interface ("Vertrag")
+  types.ts            # User, Address, Listing, Swipe, Match, Chat, Message, Review, DataAdapter ("Vertrag")
   index.ts            # wählt Adapter (eine Zeile tauschen)
-  mockAdapter.ts      # liest test.json, schreibt Änderungen in localStorage (Key swapd:mock:v1)
-  supabaseAdapter.ts  # Phase 2 (noch leer)
-  test.json           # Beispieldaten (5 User, 12 Inserate, 2 Chats, Reviews) – Berlin-Kieze
+  mockAdapter.ts      # liest test.json, schreibt Änderungen in localStorage (Key swapd:mock:v2)
+  supabaseAdapter.ts  # Phase 2: Stubs + geplantes SQL für Swipes, Matches, Adressen
+  test.json           # Stuttgart-Demo: 14 User, 15 Adressen, 41 Inserate, Seed-Swipes, 2 Chats, Reviews
 ```
 
 ```ts
@@ -57,6 +57,8 @@ export interface DataAdapter {
   getListing(id: string): Promise<Listing | null>
   createListing(data: NewListing): Promise<CreateListingResult>   // { listing, xp_earned }
   getCurrentUser(): Promise<User | null>
+  getMyAddresses(): Promise<Address[]>                             // nur eigene
+  createAddress(data: NewAddress): Promise<Address>
   getUser(id: string): Promise<User | null>
   getReviews(userId: string): Promise<Review[]>
   getChats(): Promise<Chat[]>
@@ -65,12 +67,35 @@ export interface DataAdapter {
   getMessages(chatId: string): Promise<Message[]>
   sendMessage(chatId: string, text: string): Promise<Message>
   subscribeToMessages(chatId, onMessage): () => void               // später Supabase Realtime
+  getSwipeDeck({ radius_km, include_passed? }): Promise<Listing[]>
+  recordSwipe(listingId, 'like' | 'pass'): Promise<{ match, xp_earned }>
+  undoLastSwipe(): Promise<Listing | null>
+  getMatches(): Promise<Match[]>
+  updateSearchRadius(km): Promise<User>
+  resetDemoData?(): Promise<void>                                  // nur Mock
 }
 ```
 
+### Datenmodell (= spätere Postgres-Tabellen)
+
+| Tabelle / Feld | Inhalt |
+|---|---|
+| `users` | + `search_radius_km` (Default 5), `last_address_id` (zuletzt gewählte Adresse → Vorauswahl beim Einstellen). `district`/`lat`/`lng` = Profil-Standort, Basis für Entfernungen |
+| `addresses` | `id, user_id, label ("Dorm", "Uni campus"), street, postal_code, district, city, lat, lng, created_at`. Mehrere pro User. **Nur für den Owner sichtbar** |
+| `listings` | + `address_id`. `district`/`lat`/`lng` werden beim Anlegen aus der Adresse übernommen (Snapshot) |
+| `swipes` | `id, user_id, listing_id, direction ('like' \| 'pass'), created_at`. Ein Swipe pro User + Listing (Upsert: aus „pass“ kann „like“ werden) |
+| `matches` | `id, user_ids[], listing_ids[] ([ihr Item, mein Item]), chat_id, created_at` |
+| berechnet | `listing.distance_km`, `listing.matches_my_search` (kommt aus der API, nicht gespeichert; später PostGIS / earthdistance) |
+
+- **Match-Regel:** Ich like ein Item von X **und** X hat eins meiner aktiven Items geliked → Match + Chat (mit Begrüßung von X) + **25 XP**. Pro Personen-Paar nur ein Match. Undo nimmt Match, Chat und XP wieder zurück.
+- **Swipe-Deck:** nur fremde, aktive Offering-Inserate im Radius, ohne meine Likes (Passes nur mit `include_passed`). Zuerst Items, die zu meinem „Looking for“ passen (gleiche Kategorie + Stichwort → Badge „On your list“, nur Kategorie → leicht vorgezogen), dann nach Nähe.
+- **Datenschutz:** Exakte Adressen verlassen die API nur für den Owner (`getMyAddresses`). Fremde Inserate kommen ohne `address_id`. UI zeigt nur „1.2 km · Vaihingen“. Karten-Pins werden in `src/lib/geo.ts` (`fuzzLocation`) um 60–150 m versetzt und gerundet.
+- **Neue Adresse:** Geocoding im Client über OpenStreetMap **Nominatim** (`src/lib/geocode.ts`, kostenlos, ohne Key, nur beim Speichern, max. 1 Anfrage/s). Später evtl. per Supabase Edge Function.
+- Demo-Seed: Jonas, Nina (< 5 km), Kai (5–10 km) und Luca (> 10 km) haben schon Sachen von Mika (User 1) geliked → rechts swipen auf deren Items = Match.
+
 - Joins kommen als optionale Felder (`listing.owner`, `chat.other_user`, `chat.last_message`) – genau die Form, die Supabase mit `select('*, owner:users(*)')` liefert.
 - Mock-Chat antwortet automatisch nach 1,5–3 s (Demo für Realtime).
-- Demo-Daten zurücksetzen: in der Browser-Konsole `swapdReset()`.
+- Demo-Daten zurücksetzen: Profil → ganz unten „Reset demo“ (oder Konsole: `swapdReset()`).
 
 **Regeln, damit der Wechsel zu Supabase billig bleibt:**
 - Alles **async / Promise**, auch im Mock (gern mit kleinem Fake-Delay) → Ladezustände von Anfang an in der UI.
@@ -110,7 +135,7 @@ Gamified, frisch, selbstbewusst. Knallig aber kontrolliert, **nicht girly**.
 - **Pop-Button:** harter Schatten `0 4px 0 #1C1A2B`, beim Drücken einsinken (`translateY(4px)`, Schatten 0).
 - **Radien:** 8 / 16 / 24 / Pill. Badges = Pills. XP-Balken grün auf Green Tint.
 - **Logo:** `swap'd` klein, Bricolage ExtraBold, Ink, **Apostroph pink**. App-Icon: „s'“ weiß/pink auf Ink. SVGs im claude.ai-Projekt (`swapd-logo.svg`, `swapd-logo-weiss.svg`).
-- **Tonalität:** Alles auf Englisch, persönlich, kurz. Feature-Namen englisch. Belohnen statt belehren („+20 XP für dein erstes Foto“ als Beispiel).
+- **Tonalität / Sprache:** App komplett auf **Englisch** (UI-Texte, Fake-Daten, Feature-Namen). Kurz, locker, direkt. Belohnen statt belehren („+20 XP for your first photo“). Claim: „Swap, don't shop.“
 
 ## 6. Hosting
 
@@ -137,13 +162,18 @@ src/
   data/          # siehe Abschnitt 3 – einziger Datenzugang
   components/    # App-Bausteine (BottomNav, ListingCard, XpBar, Toast, …)
   components/ui/ # shadcn-artige Basis (Button, Badge, Card, Input, Chip, Skeleton) im CD
-  screens/       # Feed, Map (Platzhalter), Listing, NewListing, Chats, Chat, Profile
-  hooks/         # useAsync (Lade-/Fehlerzustand)
-  lib/           # Formatierung, Distanz, Level/XP, Foto-Verkleinerung
+  components/swipe/ # SwipeDeck (Drag per Pointer Events), SwipeCard, MatchOverlay, DeckEmpty
+  components/map/   # ListingMap (Leaflet, per React.lazy nachgeladen)
+  screens/       # Swipe, Explore (Map | List), Listing, NewListing, Chats, Chat, Profile
+  hooks/         # useAsync (Lade-/Fehlerzustand), useReducedMotion
+  lib/           # format, geo (Haversine, Pin-Verrauschung, Radius-Stufen), geocode (Nominatim), Level/XP, Foto
 ```
 
 - CD-Farben/Radien/Schriften stehen in `tailwind.config.js`. Die Tailwind-Standardfarben sind **bewusst entfernt** → nur CD-Farben nutzbar. Pop-Effekt = Klasse `pop`.
-- Routing: React Router 6. Bottom-Nav: Feed · Map · (+) · Chats · Profile.
+- Routing: React Router 6. Bottom-Nav: **Swipe** (`/`) · **Explore** (`/explore`, `?view=map` für die Karte, `/map` leitet dorthin um) · (+) · Chats · Profile.
+- Explore-Filter (Typ, Kategorie, Suche, Radius) stehen in der URL (`type`, `cat`, `q`, `r`) und gelten für Karte **und** Liste.
+- Swipe: keine Animations-Lib, nur Pointer Events + CSS. Pfeiltasten ←/→, Backspace = Undo. `prefers-reduced-motion` → Überblenden statt Fliegen.
+- Karte: Marker sind `L.divIcon` mit CSS (`index.css`), **keine Marker-PNGs** → kein Ärger mit dem GitHub-Pages-Unterpfad. Pins: Offering = Pink, Looking for = Ink-Outline, gematcht = Grün. Kacheln = OSM-Standard, per CSS-Filter entsättigt (CARTO Positron braucht inzwischen einen API-Key). Für echten Betrieb mit viel Traffic: Kachel-Anbieter mit Key (z. B. MapTiler), OSM-Kachelregeln beachten.
 - **Node-Version:** Lars' Rechner hat Node 16 → deshalb Vite 4, Tailwind 3, `workbox-build` per `overrides` auf 7.0.0 gepinnt, shadcn-Komponenten von Hand statt CLI. Nach Update auf Node LTS (22/24) können Vite & Co. hochgezogen werden.
 
 ## 7. Tools & Plugins
@@ -158,8 +188,9 @@ src/
 - **2026-11-25:** Grundgerüst gebaut: Vite 4 + React 18 + TS + Tailwind 3 (CD-Theme), PWA (vite-plugin-pwa, Platzhalter-Icon „s'“), Mock-Adapter mit localStorage-Overlay. Screens: Feed (Offering/Looking for, Suche, Kategorien), Inserat-Detail mit „Request swap“ → Chat, Inserat einstellen (Foto + XP-Belohnung), Chats + Chat (Fake-Realtime), Profil (Level/XP, Listings, Reviews). Map-Tab = Platzhalter. Interface um `getUser`, `getReviews`, `getChat`, `startChat`, `subscribeToMessages` erweitert. Build + Typecheck grün.
   Nächste Schritte: Node auf LTS updaten · echte Logo-SVGs nach `public/` · Map-Lib entscheiden · Badges im Profil echt machen (aktuell Platzhalter) · Git-Repo anlegen.
 - **2026-11-25:** Hosting entschieden: **GitHub Pages** mit Actions-Deploy (siehe Abschnitt 6). Base-Pfad `/swapd-app-dev/`, 404.html-Fallback, `asset()`-Helper für public-Dateien. Einmalig im Repo nötig: Settings → Pages → Source = „GitHub Actions“.
+- **2026-11-26:** **Swipe-to-Swap** ist jetzt die Startseite (Drag mit Rotation + „Want it“/„Nope“-Stamps, Pop-Buttons, Undo, Pfeiltasten, Match-Overlay mit +25 XP und Auto-Chat, Empty State mit Radius-Erweiterung „+N“ und „See passed again“). Feed + Karte zusammen unter **Explore** (Map | List, gemeinsame Filter inkl. Radius). Karte entschieden: **Leaflet** (eigene CD-Pins, Radius-Kreis, Pin → Vorschau → Detail, „Use my location“ mit Fallback). Demo-Daten komplett nach **Stuttgart** (User 1 Mika in Vaihingen am Campus, Radius-Stufen < 5 / 5–10 / 10–30 km). Neu: Tabellen `swipes`, `matches`, `addresses`; `users.search_radius_km`, `users.last_address_id`. **Gespeicherte Adressen:** beim Einstellen Adresse wählen oder neu anlegen (Geocoding via Nominatim), zuletzt gewählte ist vorausgewählt. „Reset demo“ im Profil. Sprache bleibt durchgehend Englisch (auch Fake-Daten).
+  Nächste Schritte: echte Fotos für Demo-Inserate · Matches-Liste (z. B. im Chats-Tab) · Adressen im Profil verwalten (umbenennen/löschen) · Kachel-Anbieter mit Key vor echtem Launch.
 
 ## 9. Offene Fragen
 
-- MapLibre vs. Leaflet
 - Wer im Team arbeitet mit am Code / GitHub-Repo?

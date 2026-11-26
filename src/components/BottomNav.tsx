@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom'
-import { Home, Map, MessageCircle, Plus, User } from 'lucide-react'
+import { Compass, Layers, MessageCircle, Plus, User } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 const item = ({ isActive }: { isActive: boolean }) =>
@@ -14,10 +14,10 @@ export function BottomNav() {
     <nav className="pb-safe fixed inset-x-0 bottom-0 z-30 border-t border-line bg-white">
       <div className="mx-auto flex h-16 max-w-lg items-start">
         <NavLink to="/" end className={item}>
-          <Home size={24} strokeWidth={2} /> Feed
+          <Layers size={24} strokeWidth={2} /> Swipe
         </NavLink>
-        <NavLink to="/map" className={item}>
-          <Map size={24} strokeWidth={2} /> Map
+        <NavLink to="/explore" className={item}>
+          <Compass size={24} strokeWidth={2} /> Explore
         </NavLink>
         <div className="flex flex-1 justify-center">
           <button

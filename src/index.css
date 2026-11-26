@@ -37,3 +37,60 @@
   from { transform: translateY(-12px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
 }
+
+@keyframes sheet-in {
+  from { transform: translateY(24px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes match-in {
+  from { transform: scale(0.85); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* ---- Karte (Leaflet) ---------------------------------------------------- */
+.leaflet-container {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  background: #fafaf7;
+}
+.leaflet-control-attribution {
+  font-size: 10px;
+}
+/* Basemap dezent: entsättigt + aufgehellt */
+.swapd-map .leaflet-tile-pane {
+  filter: grayscale(1) brightness(1.06) contrast(0.88);
+}
+.swapd-pin-wrap {
+  background: transparent;
+  border: 0;
+}
+/* Tropfen-Pin: Quadrat mit 3 runden Ecken, 45° gedreht, Spitze nach unten */
+.swapd-pin {
+  position: relative;
+  display: block;
+  width: 24px;
+  height: 24px;
+  margin: 0 2px;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
+  transform-origin: center;
+  border: 2px solid #1c1a2b;
+  box-shadow: -2px 2px 0 #1c1a2b;
+  transition: transform 0.12s ease-out;
+}
+.swapd-pin::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border-radius: 9999px;
+  background: #ffffff;
+}
+.swapd-pin--offer { background: #d13a6b; }
+.swapd-pin--search { background: #ffffff; border-width: 3px; }
+.swapd-pin--search::after { background: #1c1a2b; inset: 6px; }
+.swapd-pin--match { background: #2fb37a; }
+.swapd-pin--match::after { background: #1c1a2b; }
+.swapd-pin.is-selected { transform: rotate(-45deg) scale(1.3); }
+@media (prefers-reduced-motion: reduce) {
+  .swapd-pin { transition: none; }
+}

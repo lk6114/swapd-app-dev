@@ -8,6 +8,7 @@ import { ScreenHeader } from '@/components/ScreenHeader'
 import { useCurrentUser } from '@/components/CurrentUser'
 import { useToast } from '@/components/Toast'
 import { CategoryIcon } from '@/components/CategoryIcon'
+import { AddressPicker } from '@/components/AddressPicker'
 import { Button } from '@/components/ui/button'
 import { Chip } from '@/components/ui/chip'
 import { Input, Label, Textarea } from '@/components/ui/input'
@@ -17,7 +18,7 @@ import { cn } from '@/lib/utils'
 export function NewListingScreen() {
   const navigate = useNavigate()
   const toast = useToast()
-  const { refresh } = useCurrentUser()
+  const { me, refresh } = useCurrentUser()
   const fileRef = useRef<HTMLInputElement>(null)
 
   const [type, setType] = useState<ListingType>('offer')
@@ -26,9 +27,10 @@ export function NewListingScreen() {
   const [category, setCategory] = useState<Category | null>(null)
   const [condition, setCondition] = useState<Condition>('good')
   const [description, setDescription] = useState('')
+  const [addressId, setAddressId] = useState<string | null>(null)
   const [saving, setSaving] = useState(false)
 
-  const canSubmit = title.trim().length >= 3 && category && !saving
+  const canSubmit = title.trim().length >= 3 && category && addressId && !saving
 
   async function pickPhoto(file?: File) {
     if (!file) return
@@ -51,6 +53,7 @@ export function NewListingScreen() {
         category: category!,
         condition,
         photo_url: photo,
+        address_id: addressId!,
       })
       await refresh()
       toast(`+${xp_earned} XP · You're live! 🎉`, 'reward')
@@ -149,6 +152,8 @@ export function NewListingScreen() {
             maxLength={500}
           />
         </div>
+
+        {me && <AddressPicker value={addressId} onChange={setAddressId} defaultId={me.last_address_id} />}
       </div>
 
       <div className="pb-safe fixed inset-x-0 bottom-0 z-20 border-t border-line bg-white/95 backdrop-blur">

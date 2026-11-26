@@ -27,6 +27,12 @@ export function ProfileScreen() {
     [me?.id],
   )
 
+  async function resetDemo() {
+    if (!confirm('Reset all demo data? Swipes, matches, chats and new listings will be gone.')) return
+    await api.resetDemoData?.()
+    location.reload()
+  }
+
   if (meLoading || !me) {
     return (
       <>
@@ -127,6 +133,14 @@ export function ProfileScreen() {
           ) : (
             <EmptyState icon={<Star size={28} />} title="No reviews yet" />
           ))}
+
+        {api.resetDemoData && (
+          <div className="pb-4 pt-8 text-center">
+            <button onClick={resetDemo} className="text-xs font-bold text-ink-muted/70 underline-offset-4 hover:underline">
+              Reset demo
+            </button>
+          </div>
+        )}
       </main>
     </>
   )

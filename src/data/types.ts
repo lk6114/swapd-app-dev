@@ -22,10 +22,35 @@ export type Category = (typeof CATEGORIES)[number]
 export const CONDITIONS = ['new', 'like_new', 'good', 'used'] as const
 export type Condition = (typeof CONDITIONS)[number]
 
+/**
+ * Tabelle addresses: gespeicherte Abholorte eines Users (z. B. "Dorm", "Campus").
+ * Exakte Adresse wird NIE anderen angezeigt (nur Stadtteil + Entfernung) und kommt bei
+ * fremden Usern/Inseraten gar nicht erst aus der API (später: RLS "nur Owner" in Supabase).
+ */
+export interface Address {
+  id: string
+  user_id: string
+  label: string
+  street: string
+  postal_code: string
+  district: string
+  city: string
+  lat: number
+  lng: number
+  created_at: string
+}
+
+export type NewAddress = Omit<Address, 'id' | 'user_id' | 'created_at'>
+
 export interface User {
   id: string
   name: string
+  /** Stadtteil + lat/lng = Profil-Standort (Basis für Entfernungen & Swipe-Radius). */
   district: string
+  /** Zuletzt beim Einstellen gewählte Adresse → beim nächsten Mal vorausgewählt. */
+  last_address_id: string | null
+  /** Swipe-Radius in km (Default 5). */
+  search_radius_km: number
   bio: string
   avatar_url: string | null
   xp: number
@@ -46,12 +71,18 @@ export interface Listing {
   category: Category
   condition: Condition
   photo_url: string | null
+  /** Abholort. district/lat/lng werden beim Anlegen daraus übernommen (Snapshot). */
+  address_id: string | null
   district: string
   lat: number
   lng: number
   status: 'active' | 'swapped'
   created_at: string
   owner?: User
+  /** Berechnet (nicht gespeichert): Entfernung zu mir in km – wie später PostGIS sie mitliefert. */
+  distance_km?: number
+  /** Berechnet: passt zu einem meiner "Looking for"-Inserate. */
+  matches_my_search?: boolean
 }
 
 export interface NewListing {
@@ -61,6 +92,7 @@ export interface NewListing {
   category: Category
   condition: Condition
   photo_url: string | null
+  address_id: string
 }
 
 export interface ListingFilter {
@@ -68,6 +100,43 @@ export interface ListingFilter {
   category?: Category
   user_id?: string
   query?: string
+  /** Nur Inserate im Umkreis (km) um `near` (Default: mein Standort). */
+  radius_km?: number
+  near?: { lat: number; lng: number }
+}
+
+export type SwipeDirection = 'like' | 'pass'
+
+/** Tabelle swipes: ein Swipe pro (user_id, listing_id). */
+export interface Swipe {
+  id: string
+  user_id: string
+  listing_id: string
+  direction: SwipeDirection
+  created_at: string
+}
+
+/** Tabelle matches: zwei User haben gegenseitig Sachen geliked. */
+export interface Match {
+  id: string
+  user_ids: string[]
+  /** [Item, das ich geliked habe, mein Item, das die andere Person geliked hat] */
+  listing_ids: string[]
+  chat_id: string
+  created_at: string
+  listings?: Listing[]
+  other_user?: User
+}
+
+export interface SwipeDeckOptions {
+  radius_km: number
+  /** Bereits gepasste Items erneut zeigen (gelikte nie). */
+  include_passed?: boolean
+}
+
+export interface RecordSwipeResult {
+  match: Match | null
+  xp_earned: number
 }
 
 export interface Review {
@@ -112,6 +181,9 @@ export interface DataAdapter {
 
   // Users
   getCurrentUser(): Promise<User | null>
+  /** Meine gespeicherten Adressen (nur eigene, nie fremde). */
+  getMyAddresses(): Promise<Address[]>
+  createAddress(data: NewAddress): Promise<Address>
   getUser(id: string): Promise<User | null>
   getReviews(userId: string): Promise<Review[]>
 
@@ -124,4 +196,17 @@ export interface DataAdapter {
   sendMessage(chatId: string, text: string): Promise<Message>
   /** Live-Updates (Supabase: Realtime). Gibt eine Abmelde-Funktion zurück. */
   subscribeToMessages(chatId: string, onMessage: (msg: Message) => void): () => void
+
+  // Swipe-to-Swap
+  /** Fremde, aktive Offering-Inserate im Radius, noch nicht geswiped. Passende zuerst, dann nach Nähe. */
+  getSwipeDeck(opts: SwipeDeckOptions): Promise<Listing[]>
+  /** Speichert Like/Pass. Bei gegenseitigem Like: Match + Chat werden angelegt. */
+  recordSwipe(listingId: string, direction: SwipeDirection): Promise<RecordSwipeResult>
+  /** Macht meinen letzten Swipe rückgängig und gibt das Inserat zurück (oder null). */
+  undoLastSwipe(): Promise<Listing | null>
+  getMatches(): Promise<Match[]>
+  updateSearchRadius(km: number): Promise<User>
+
+  /** Nur Demo/Mock: alle lokalen Änderungen verwerfen. */
+  resetDemoData?(): Promise<void>
 }

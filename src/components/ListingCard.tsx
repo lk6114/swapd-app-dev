@@ -1,13 +1,21 @@
 import { Link } from 'react-router-dom'
-import { MapPin } from 'lucide-react'
+import { ChevronRight, MapPin } from 'lucide-react'
 import type { Listing, User } from '@/data'
 import { distanceKm, formatDistance } from '@/lib/format'
+import { cn } from '@/lib/utils'
 import { ListingPhoto } from './ListingPhoto'
 import { TypeBadge } from './TypeBadge'
+import { Avatar } from './Avatar'
 import { Skeleton } from './ui/skeleton'
 
+/** "1.2 km · Vaihingen" – nie die genaue Adresse. Bei eigenen Inseraten nur der Stadtteil. */
+export function placeLabel(listing: Listing, me?: User | null) {
+  if (me && listing.user_id === me.id) return listing.district
+  const km = listing.distance_km ?? (me ? distanceKm(me, listing) : null)
+  return km !== null ? `${formatDistance(km)} · ${listing.district}` : listing.district
+}
+
 export function ListingCard({ listing, me }: { listing: Listing; me?: User | null }) {
-  const km = me ? distanceKm(me, listing) : null
   return (
     <Link
       to={`/listing/${listing.id}`}
@@ -20,12 +28,36 @@ export function ListingCard({ listing, me }: { listing: Listing; me?: User | nul
       <div className="p-3">
         <p className="line-clamp-2 text-sm font-bold leading-snug">{listing.title}</p>
         <p className="mt-1 flex items-center gap-1 text-xs text-ink-muted">
-          <MapPin size={12} strokeWidth={2} />
-          {km !== null ? formatDistance(km) : listing.district}
-          <span aria-hidden>·</span>
-          <span className="truncate">{listing.owner?.name}</span>
+          <MapPin size={12} strokeWidth={2} className="shrink-0" />
+          <span className="truncate">{placeLabel(listing, me)}</span>
         </p>
       </div>
+    </Link>
+  )
+}
+
+/** Kompakte Zeile (z. B. im Karten-Sheet). */
+export function ListingRow({ listing, me, className }: { listing: Listing; me?: User | null; className?: string }) {
+  return (
+    <Link
+      to={`/listing/${listing.id}`}
+      className={cn('flex items-center gap-3 rounded-md border-2 border-ink bg-white p-2 pr-3 shadow-pop', className)}
+    >
+      <ListingPhoto listing={listing} className="h-20 w-20 shrink-0 rounded-sm" iconSize={32} />
+      <div className="min-w-0 flex-1">
+        <TypeBadge type={listing.type} />
+        <p className="mt-1 truncate font-bold">{listing.title}</p>
+        <p className="mt-0.5 flex items-center gap-1 text-xs text-ink-muted">
+          <MapPin size={12} strokeWidth={2} className="shrink-0" />
+          <span className="truncate">{placeLabel(listing, me)}</span>
+        </p>
+        {listing.owner && (
+          <p className="mt-1 flex items-center gap-1.5 text-xs font-bold">
+            <Avatar user={listing.owner} className="h-5 w-5 text-[10px]" /> {listing.owner.name}
+          </p>
+        )}
+      </div>
+      <ChevronRight size={20} strokeWidth={2} className="shrink-0 text-ink-muted" />
     </Link>
   )
 }

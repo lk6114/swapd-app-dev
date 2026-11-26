@@ -2,8 +2,8 @@ import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
 import { AppLayout, PlainLayout } from '@/components/AppLayout'
 import { CurrentUserProvider } from '@/components/CurrentUser'
 import { ToastProvider } from '@/components/Toast'
-import { FeedScreen } from '@/screens/FeedScreen'
-import { MapScreen } from '@/screens/MapScreen'
+import { SwipeScreen } from '@/screens/SwipeScreen'
+import { ExploreScreen } from '@/screens/ExploreScreen'
 import { ListingScreen } from '@/screens/ListingScreen'
 import { NewListingScreen } from '@/screens/NewListingScreen'
 import { ChatsScreen } from '@/screens/ChatsScreen'
@@ -17,8 +17,9 @@ export default function App() {
         <CurrentUserProvider>
           <Routes>
             <Route element={<AppLayout />}>
-              <Route path="/" element={<FeedScreen />} />
-              <Route path="/map" element={<MapScreen />} />
+              <Route path="/" element={<SwipeScreen />} />
+              <Route path="/explore" element={<ExploreScreen />} />
+              <Route path="/map" element={<Navigate to="/explore?view=map" replace />} />
               <Route path="/chats" element={<ChatsScreen />} />
               <Route path="/profile" element={<ProfileScreen />} />
             </Route>
